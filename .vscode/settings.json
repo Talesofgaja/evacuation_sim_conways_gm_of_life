@@ -1,0 +1,21 @@
+{
+  "java.jdt.ls.java.home": "C:\\Users\\agomo\\jdk-17",
+  "java.configuration.runtimes": [
+    {
+      "name": "JavaSE-17",
+      "path": "C:\\Users\\agomo\\jdk-17",
+      "default": true
+    }
+  ],
+  "terminal.integrated.env.windows": {
+    "JAVA_HOME": "C:\\Users\\agomo\\jdk-17",
+    "PATH": "C:\\Users\\agomo\\jdk-17\\bin;${env:PATH}"
+  },
+  "maven.terminal.customEnv": [
+    {
+      "environmentVariable": "JAVA_HOME",
+      "value": "C:\\Users\\agomo\\jdk-17"
+    }
+  ],
+  "java.configuration.updateBuildConfiguration": "interactive"
+}

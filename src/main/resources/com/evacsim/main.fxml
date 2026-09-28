@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.canvas.Canvas?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.Separator?>
+<?import javafx.scene.control.Slider?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.VBox?>
+
+<BorderPane xmlns="http://javafx.com/javafx/21"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.evacsim.controller.SimulationController"
+            stylesheets="@styles.css">
+
+    <center>
+        <VBox alignment="CENTER" styleClass="canvas-wrapper" BorderPane.alignment="CENTER">
+            <Canvas fx:id="simulationCanvas" width="720" height="860" />
+        </VBox>
+    </center>
+
+    <right>
+        <VBox spacing="8" prefWidth="310" styleClass="side-panel">
+            <padding>
+                <Insets top="16" right="16" bottom="16" left="16" />
+            </padding>
+
+            <Label text="Crowd Evacuation Simulator" styleClass="title-label" wrapText="true" />
+            <Label text="Cellular-automaton classroom evacuation"
+                   styleClass="subtitle-label" wrapText="true" />
+            <Separator />
+
+            <Label text="Controls" styleClass="section-label" />
+            <HBox spacing="6">
+                <Button fx:id="playButton" text="Play" onAction="#onPlay" />
+                <Button fx:id="pauseButton" text="Pause" onAction="#onPause" />
+                <Button fx:id="stepButton" text="Step" onAction="#onStep" />
+                <Button fx:id="resetButton" text="Reset" onAction="#onReset" />
+            </HBox>
+
+            <Label text="Speed (gens / sec)" />
+            <Slider fx:id="speedSlider" min="1" max="20" value="8"
+                    showTickLabels="true" showTickMarks="true" majorTickUnit="5" blockIncrement="1" />
+
+            <Separator />
+
+            <Label text="Scenario" styleClass="section-label" />
+
+            <Label fx:id="studentCountValueLabel" text="Students: 70" />
+            <Slider fx:id="studentCountSlider" min="60" max="80" value="70"
+                    showTickLabels="true" showTickMarks="false" majorTickUnit="10" blockIncrement="1" />
+
+            <Label fx:id="shyPercentValueLabel" text="Shy: 70%  ·  Angry: 30%" />
+            <Slider fx:id="shyPercentSlider" min="0" max="100" value="70"
+                    showTickLabels="true" showTickMarks="false" majorTickUnit="25" blockIncrement="5" />
+
+            <Button fx:id="generateButton" text="Randomize Scenario" onAction="#onGenerateScenario"
+                    maxWidth="Infinity" styleClass="accent-button" />
+
+            <Separator />
+
+            <Label text="Statistics" styleClass="section-label" />
+            <Label fx:id="generationLabel" text="Generation: 0" />
+            <Label fx:id="remainingLabel" text="Students Remaining: 0" />
+            <Label fx:id="evacuatedLabel" text="Evacuated: 0 / 0" />
+            <Label fx:id="stunnedLabel" text="Stunned: 0" />
+            <Label fx:id="collisionsLabel" text="Collisions: 0" />
+            <Label fx:id="exitStatusLabel" text="Exit Status: —" wrapText="true" />
+            <Label fx:id="evacTimeLabel" text="Evacuation Time: —" />
+
+            <Region VBox.vgrow="ALWAYS" />
+
+            <Label text="Legend" styleClass="section-label" />
+            <Label text="■ Shy    ■ Angry    ■ Stunned" styleClass="legend-label" />
+            <Label text="■ Floor  ■ Bench  ■ Wall" styleClass="legend-label" />
+            <Label text="■ Exit open / busy / blocked" styleClass="legend-label" />
+        </VBox>
+    </right>
+
+</BorderPane>
