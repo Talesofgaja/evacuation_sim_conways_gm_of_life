@@ -14,13 +14,11 @@ import java.util.concurrent.ThreadLocalRandom;
 /**
  * Aggressive mover: lower crowd aversion, competes for cells, can jump benches.
  */
-public final class AngryBehavior implements MovementBehavior {
+public final class AngryBehavior extends AbstractMovementBehavior {
 
     private static final double W_DIST = 4.0;
     private static final double W_CROWD = 0.7;
     private static final double JUMP_BONUS = 1.6;
-
-    private static final int[][] DIRS = {{-1, 0}, {1, 0}, {0, -1}, {0, 1}};
 
     @Override
     public MoveDecision decide(Student self, Room room, Map<Position, Student> occupied) {
@@ -28,13 +26,11 @@ public final class AngryBehavior implements MovementBehavior {
         int currentDist = room.distanceToExit(here);
         List<Scored> options = new ArrayList<>();
 
-        // Orthogonal steps onto walkable / exit cells.
         for (int[] d : DIRS) {
             Position next = here.offset(d[0], d[1]);
             scoreCandidate(self, room, occupied, here, currentDist, next, false, options);
         }
 
-        // Bench jump: step across a SEAT cell into the aisle beyond (2 steps).
         for (int[] d : DIRS) {
             Position over = here.offset(d[0], d[1]);
             Position landing = here.offset(d[0] * 2, d[1] * 2);
@@ -45,7 +41,7 @@ public final class AngryBehavior implements MovementBehavior {
                 continue;
             }
             CellType landType = room.getType(landing);
-            if (landType == CellType.WALL || landType == CellType.SEAT) {
+            if (isImpassable(landType)) {
                 continue;
             }
             scoreCandidate(self, room, occupied, here, currentDist, landing, true, options);
@@ -70,10 +66,9 @@ public final class AngryBehavior implements MovementBehavior {
             return;
         }
         CellType type = room.getType(next);
-        if (type == CellType.WALL || type == CellType.SEAT) {
+        if (isImpassable(type)) {
             return;
         }
-        // Angry students still won't step onto an occupied cell (conflict layer handles races).
         if (occupied.containsKey(next) && !next.equals(here)) {
             return;
         }

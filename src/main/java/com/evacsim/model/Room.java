@@ -20,6 +20,7 @@ public final class Room {
     private final List<Position> seats;
     private final List<Exit> exits;
     private final int[][] distanceField;
+    private HazardConditions hazard = HazardConditions.CLEAR;
 
     public Room() {
         this.cells = new Cell[ROWS][COLS];
@@ -54,9 +55,20 @@ public final class Room {
             }
         }
 
-        addExit(0, List.of(new Position(ROWS - 1, 5), new Position(ROWS - 1, 6)));
-        addExit(1, List.of(new Position(ROWS - 1, 13), new Position(ROWS - 1, 14)));
-        addExit(2, List.of(new Position(10, 0), new Position(11, 0)));
+        addExit(0, List.of(
+                new Position(ROWS - 1, 4), new Position(ROWS - 1, 5), new Position(ROWS - 1, 6)));
+        addExit(1, List.of(
+                new Position(ROWS - 1, 13), new Position(ROWS - 1, 14), new Position(ROWS - 1, 15)));
+        addExit(2, List.of(
+                new Position(9, 0), new Position(10, 0), new Position(11, 0)));
+    }
+
+    public HazardConditions getHazard() {
+        return hazard;
+    }
+
+    public void setHazard(HazardConditions hazard) {
+        this.hazard = hazard == null ? HazardConditions.CLEAR : hazard;
     }
 
     private void addExit(int id, List<Position> exitCells) {

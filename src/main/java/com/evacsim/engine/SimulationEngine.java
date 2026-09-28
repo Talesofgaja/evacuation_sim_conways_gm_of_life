@@ -1,7 +1,9 @@
 package com.evacsim.engine;
 
+import com.evacsim.concurrent.SimulationExecutors;
 import com.evacsim.model.Exit;
 import com.evacsim.model.ExitStatus;
+import com.evacsim.model.HazardConditions;
 import com.evacsim.model.Position;
 import com.evacsim.model.Room;
 import com.evacsim.model.Student;
@@ -15,6 +17,9 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 
@@ -30,6 +35,7 @@ public final class SimulationEngine {
     private Room room;
     private final List<Student> students = new ArrayList<>();
     private final SimulationStats stats = new SimulationStats();
+    private HazardConditions hazard = HazardConditions.CLEAR;
     private boolean finished;
 
     public SimulationEngine() {
@@ -55,6 +61,7 @@ public final class SimulationEngine {
     public void reset(int studentCount, double shyRatio) {
         Student.resetIdCounter();
         room = new Room();
+        room.setHazard(hazard);
         students.clear();
         finished = false;
 
@@ -78,6 +85,17 @@ public final class SimulationEngine {
         reset(count, shy);
     }
 
+    public void setHazard(HazardConditions hazard) {
+        this.hazard = hazard == null ? HazardConditions.CLEAR : hazard;
+        if (room != null) {
+            room.setHazard(this.hazard);
+        }
+    }
+
+    public HazardConditions getHazard() {
+        return hazard;
+    }
+
     /**
      * Advance exactly one generation.
      */
@@ -96,17 +114,7 @@ public final class SimulationEngine {
         room.refreshDistanceField();
         Map<Position, Student> occupied = room.occupancyMap(students);
 
-        List<MoveDecision> decisions = new ArrayList<>();
-        for (Student s : students) {
-            if (!s.isPresent()) {
-                continue;
-            }
-            if (s.isStunned()) {
-                decisions.add(MoveDecision.stay(s));
-            } else {
-                decisions.add(s.getBehavior().decide(s, room, occupied));
-            }
-        }
+        List<MoveDecision> decisions = decideInParallel(occupied);
 
         Map<Position, List<MoveDecision>> byTarget = new HashMap<>();
         for (MoveDecision d : decisions) {
@@ -282,6 +290,34 @@ public final class SimulationEngine {
             case CONGESTED -> "BUSY";
             case BLOCKED -> "BLOCKED";
         };
+    }
+
+    private List<MoveDecision> decideInParallel(Map<Position, Student> occupied) {
+        List<Callable<MoveDecision>> tasks = new ArrayList<>();
+        for (Student s : students) {
+            if (!s.isPresent()) {
+                continue;
+            }
+            if (s.isStunned()) {
+                tasks.add(() -> MoveDecision.stay(s));
+            } else {
+                Student student = s;
+                tasks.add(() -> student.getBehavior().decide(student, room, occupied));
+            }
+        }
+        try {
+            List<Future<MoveDecision>> futures = SimulationExecutors.decisions().invokeAll(tasks);
+            List<MoveDecision> decisions = new ArrayList<>(futures.size());
+            for (Future<MoveDecision> future : futures) {
+                decisions.add(future.get());
+            }
+            return decisions;
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            return List.of();
+        } catch (ExecutionException e) {
+            throw new IllegalStateException("Decision thread failed", e.getCause());
+        }
     }
 
     private void refreshStats() {

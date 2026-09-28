@@ -14,14 +14,12 @@ import java.util.concurrent.ThreadLocalRandom;
 /**
  * Conservative mover: personal space, no bench jumping, hesitates in crowds.
  */
-public final class ShyBehavior implements MovementBehavior {
+public final class ShyBehavior extends AbstractMovementBehavior {
 
     private static final double W_DIST = 3.2;
     private static final double W_CROWD = 2.4;
     private static final double W_SPACE = 1.8;
-    private static final double HESITATION_DENSITY = 3;
-
-    private static final int[][] DIRS = {{-1, 0}, {1, 0}, {0, -1}, {0, 1}};
+    private static final int HESITATION_DENSITY = 3;
 
     @Override
     public MoveDecision decide(Student self, Room room, Map<Position, Student> occupied) {
@@ -29,9 +27,9 @@ public final class ShyBehavior implements MovementBehavior {
         int density = room.localDensity(here, occupied, 1);
         boolean onSeat = room.getType(here) == CellType.SEAT;
 
-        // Hesitate when crowded — but not while still trapped on a bench.
+        double hesitateChance = 0.55 + room.getHazard().getHesitationExtra();
         if (!onSeat && density >= HESITATION_DENSITY
-                && ThreadLocalRandom.current().nextDouble() < 0.55) {
+                && ThreadLocalRandom.current().nextDouble() < hesitateChance) {
             return MoveDecision.stay(self);
         }
 
@@ -44,8 +42,8 @@ public final class ShyBehavior implements MovementBehavior {
                 continue;
             }
             CellType type = room.getType(next);
-            if (type == CellType.WALL || type == CellType.SEAT) {
-                continue; // never jump benches / walk on seats
+            if (isImpassable(type)) {
+                continue;
             }
             if (occupied.containsKey(next)) {
                 continue;
@@ -81,24 +79,11 @@ public final class ShyBehavior implements MovementBehavior {
         options.sort((a, b) -> Double.compare(b.score, a.score));
         Scored best = options.get(0);
 
-        // If the best move is not an improvement and space is tight, stay put.
         if (best.score < 0.4 && density >= 2) {
             return MoveDecision.stay(self);
         }
 
         return new MoveDecision(self, best.pos, best.score, false);
-    }
-
-    private static int countAdjacentOccupied(Position p, Map<Position, Student> occupied, Student self) {
-        int n = 0;
-        for (int[] d : DIRS) {
-            Position q = p.offset(d[0], d[1]);
-            Student other = occupied.get(q);
-            if (other != null && other.getId() != self.getId()) {
-                n++;
-            }
-        }
-        return n;
     }
 
     private record Scored(Position pos, double score) {
